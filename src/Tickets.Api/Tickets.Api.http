@@ -1,0 +1,103 @@
+@host = http://localhost:5033
+
+### Create a ticket
+POST {{host}}/api/ticket-events
+Content-Type: application/json
+
+{
+  "eventId": "evt-1",
+  "ticketId": "T-100",
+  "type": "TicketCreated",
+  "status": "Open",
+  "occurredAt": "2026-10-27T10:00:00Z",
+  "customerId": "Acme Ltd",
+  "subject": "Cannot log in"
+}
+
+### Change status
+POST {{host}}/api/ticket-events
+Content-Type: application/json
+
+{
+  "eventId": "evt-2",
+  "ticketId": "T-100",
+  "type": "StatusChanged",
+  "status": "InProgress",
+  "occurredAt": "2026-10-27T10:05:00Z"
+}
+
+### Duplicate eventId -> 200, "duplicate": true, no change
+POST {{host}}/api/ticket-events
+Content-Type: application/json
+
+{
+  "eventId": "evt-2",
+  "ticketId": "T-100",
+  "type": "StatusChanged",
+  "status": "InProgress",
+  "occurredAt": "2026-10-27T10:05:00Z"
+}
+
+### Created again for an existing ticket (new eventId) -> 409
+POST {{host}}/api/ticket-events
+Content-Type: application/json
+
+{
+  "eventId": "evt-4",
+  "ticketId": "T-100",
+  "type": "TicketCreated",
+  "status": "Open",
+  "occurredAt": "2026-10-27T10:10:00Z",
+  "customerId": "Acme Ltd",
+  "subject": "Cannot log in"
+}
+
+### Resolve the ticket
+POST {{host}}/api/ticket-events
+Content-Type: application/json
+
+{
+  "eventId": "evt-5",
+  "ticketId": "T-100",
+  "type": "StatusChanged",
+  "status": "Resolved",
+  "occurredAt": "2026-10-27T12:00:00Z"
+}
+
+### Stale event (older occurredAt) -> 200, status stays Resolved
+POST {{host}}/api/ticket-events
+Content-Type: application/json
+
+{
+  "eventId": "evt-6",
+  "ticketId": "T-100",
+  "type": "StatusChanged",
+  "status": "InProgress",
+  "occurredAt": "2026-10-27T11:00:00Z"
+}
+
+### Missing fields (no eventId, no occurredAt) -> 400
+POST {{host}}/api/ticket-events
+Content-Type: application/json
+
+{
+  "ticketId": "T-100",
+  "type": "StatusChanged",
+  "status": "InProgress"
+}
+
+### Invalid status -> 400
+POST {{host}}/api/ticket-events
+Content-Type: application/json
+
+{
+  "eventId": "evt-3",
+  "ticketId": "T-100",
+  "type": "StatusChanged",
+  "status": "Banana",
+  "occurredAt": "2026-10-27T10:06:00Z"
+}
+
+### Get ticket
+GET {{host}}/api/tickets/T-100
+Accept: application/json
